@@ -1,41 +1,26 @@
-const getKeyBtn = document.getElementById("getKeyBtn");
-const keyBox = document.getElementById("keyBox");
-const keyText = document.getElementById("keyText");
-
-const GP_API_KEY = "fd1ee37894834fdf687a5dff8a29180354ed882a"; // Replace with your GPLinks API key
-const REDIRECT_URL = "https://yourdomain.com/key-generator/?watched=true"; // After ad completion
-
-// Check if returned from ad
-const urlParams = new URLSearchParams(window.location.search);
-const watched = urlParams.get("watched");
-
-// If user came from ad, generate KeyAuth key
-if (watched === "true") {
-  fetch('https://keyauth.win/api/seller/?sellerkey=YOUR_KEYAUTH_SELLER_KEY&type=add&expiry=1&mask=true&format=text')
-    .then(res => res.text())
-    .then(key => {
-      keyBox.style.display = "block";
-      keyText.innerText = key;
-    })
-    .catch(err => {
-      alert("Failed to generate key.");
-    });
-}
-
-getKeyBtn.onclick = () => {
-  const apiURL = `https://gplinks.in/api?api=${GP_API_KEY}&url=${encodeURIComponent(REDIRECT_URL)}`;
-
-  fetch(apiURL)
-    .then(res => res.json())
-    .then(data => {
+document.getElementById("claimBtn").onclick = async function () {
+    const token = Math.random().toString(36).substr(2, 10);
+    localStorage.setItem("user_token", token);
+  
+    const redirectURL = `https://luciferofx.github.io/key-generator/verify.html?token=${token}`;
+  
+    const apiKey = "fd1ee37894834fdf687a5dff8a29180354ed882a";
+    const gplinkApi = `https://gplinks.co/api?api=${apiKey}&url=${encodeURIComponent(redirectURL)}`;
+  
+    try {
+      const res = await fetch(gplinkApi);
+      const data = await res.json();
+  
+      console.log("GPLink Response:", data); // 👈 Debug line
+  
       if (data.shortenedUrl) {
         window.location.href = data.shortenedUrl;
       } else {
-        alert("Failed to shorten link");
+        alert("Error creating GPLink. Please check API key and logs.");
       }
-    })
-    .catch(err => {
-      console.error(err);
-      alert("Something went wrong");
-    });
-};
+    } catch (error) {
+      alert("Something went wrong with GPLink.");
+      console.error("GPLink Error:", error); // 👈 Full error log
+    }
+  };
+  
