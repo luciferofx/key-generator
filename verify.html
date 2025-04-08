@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Verifying...</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container" id="output">
+    <h2>Verifying...</h2>
+    
+    <!-- Ad placement -->
+    <div class="ad-box">
+      <iframe src="https://your-ad-network.com/ad2.html" frameborder="0"></iframe>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+    import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "YOUR_FIREBASE_API_KEY",
+      authDomain: "yourapp.firebaseapp.com",
+      databaseURL: "https://yourapp.firebaseio.com",
+      projectId: "yourapp",
+      storageBucket: "yourapp.appspot.com",
+      messagingSenderId: "SENDER_ID",
+      appId: "APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const token = new URLSearchParams(window.location.search).get("token");
+    const output = document.getElementById("output");
+
+    const ip = await (await fetch("https://api.ipify.org?format=json")).json();
+
+    const ipRef = ref(db, "ips/" + ip.ip);
+    const now = Date.now();
+
+    get(ipRef).then(snapshot => {
+      if (snapshot.exists()) {
+        const lastTime = snapshot.val().timestamp;
+        if ((now - lastTime) < 86400000) {
+          output.innerHTML = `<h2>⛔ Already claimed within 24 hours!</h2>`;
+          return;
+        }
+      }
+
+      const accRef = ref(db, "accounts");
+      get(accRef).then(snapshot => {
+        const data = snapshot.val();
+        if (!data) {
+          output.innerHTML = `<h2>😢 No more accounts available.</h2>`;
+          return;
+        }
+
+        const key = Object.keys(data)[0];
+        const creds = data[key];
+
+        remove(ref(db, "accounts/" + key));
+        set(ipRef, { timestamp: now, token: token });
+
+        output.innerHTML = `
+          <h2>✅ Your Free Account</h2>
+          <p><strong>Username:</strong> ${creds.username}</p>
+          <p><strong>Password:</strong> ${creds.password}</p>
+          <p class="note">Come back in 24 hours to get another!</p>
+        `;
+      });
+    });
+  </script>
+</body>
+</html>
